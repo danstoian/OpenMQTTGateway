@@ -220,7 +220,10 @@ boolean reconnect() {
       if (failure_number > maxMQTTretry){
         trc(F("failed connecting to mqtt"));
         #if defined(ESP8266) && !defined(ESPWifiManualSetup)
-          if (!connectedOnce) setup_wifimanager(); // if we didn't connected once to mqtt we reset and start in AP mode again to have a chance to change the parameters
+          if (!connectedOnce) {
+            trc(F("fail connecting to mqtt, reseting wifi manager"));
+            setup_wifimanager(true); // if we didn't connected once to mqtt we reset and start in AP mode again to have a chance to change the parameters
+          }
         #elif defined(ESP32) || defined(ESPWifiManualSetup)// ESP32 case we don't use Wifi manager yet
           setup_wifi();
         #endif
@@ -263,7 +266,7 @@ void setup()
     #endif
     
     #if defined(ESP8266) && !defined(ESPWifiManualSetup)
-      setup_wifimanager();
+      setup_wifimanager(false);
     #else // ESP32 case we don't use Wifi manager yet
       setup_wifi();
     #endif
@@ -443,11 +446,9 @@ void saveConfigCallback () {
   shouldSaveConfig = true;
 }
 
-void setup_wifimanager(){
-    #ifdef cleanFS
-    //clean FS, for testing
-      SPIFFS.format();
-    #endif
+void setup_wifimanager(boolean reset_settings){
+    if(reset_settings)  SPIFFS.format();
+
     //read configuration from FS json
     trc("mounting FS...");
   
@@ -495,6 +496,8 @@ void setup_wifimanager(){
    //WiFiManager
     //Local intialization. Once its business is done, there is no need to keep it around
     WiFiManager wifiManager;
+    //Set timeout before going to portal
+    wifiManager.setConfigPortalTimeout(WifiManager_ConfigPortalTimeOut);
   
     //set config save notify callback
     wifiManager.setSaveConfigCallback(saveConfigCallback);
@@ -508,10 +511,7 @@ void setup_wifimanager(){
     wifiManager.addParameter(&custom_mqtt_user);
     wifiManager.addParameter(&custom_mqtt_pass);
 
-    #ifdef cleanFS
-      //reset settings - for testing
-      wifiManager.resetSettings();
-    #endif
+    if(reset_settings)  wifiManager.resetSettings();
     //set minimu quality of signal so it ignores AP's under that quality
     wifiManager.setMinimumSignalQuality(MinimumWifiSignalQuality);
   
@@ -697,7 +697,7 @@ void loop()
       if(RFM69toMQTT())
       trc(F("RFM69toMQTT OK"));
     #endif
-    #if defined(ESP8266) || defined(ESP32)
+    #if defined(ESP8266) || defined(ESP32) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega1280__)
       stateMeasures();
     #endif
   }
