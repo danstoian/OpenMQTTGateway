@@ -40,7 +40,7 @@
 #define RawFrequency 38 // raw frequency sending
 //#define DumpMode true // uncomment so as to see big dumps of IR codes
 
-#define pubIRunknownPrtcl false // key to avoid mqtt publication of unknown IR protocol (set to true if you want to publish unknown protocol)
+#define pubIRunknownPrtcl true // key to avoid mqtt publication of unknown IR protocol (set to true if you want to publish unknown protocol)
 #define PanasonicAddress      0x4004     // Panasonic address (Pre data) 
 
 #ifdef ESP8266 //IR supported protocols on ESP8266, all supported per default
